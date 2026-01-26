@@ -1,62 +1,72 @@
-import {Outlet, useNavigate} from "react-router-dom";
+import {useEffect, useState} from "react";
 import {useAuth} from "../context/useAuth";
-import "./Layout.css";
-
+import "./LoginForm.css";
+import {Link, useNavigate} from "react-router-dom";
 /*
- * Layout
+ * LoginForm
  *
- * Layout-komponenten definierar den gemensamma strukturen
- * för applikationens sidor.
+ * Denna komponent ansvarar för inloggning av användaren.
+ * Den innehåller formulärfält för användarnamn och lösenord
+ * samt logik för att initiera inloggning via AuthProvider.
  *
- * Den innehåller:
- * - ett header-område (titel + globala kontroller)
- * - ett main-område där sidinnehåll renderas
- * - ett footer-område som alltid visas
+ * Komponenten:
+ * - använder useAuth() för att anropa login-funktionen
+ *   och för att läsa aktuell autentiseringsstatus (token)
+ * - använder useNavigate() för att omdirigera användaren
+ *   efter lyckad inloggning
+ * - använder useState för att hantera formulärdata
  *
- * Headern visar även en logout-knapp när användaren
- * är inloggad.
- *
- * <Outlet /> används av React Router för att rendera
- * den aktuella routens komponent inuti layouten.
- *
- * Layout-komponenten innehåller ingen affärslogik
- * kopplad till data eller backend, men ansvarar för
- * global användarinteraktion såsom utloggning.
+ * Flöde:
+ * 1. Användaren skriver in användarnamn och lösenord
+ * 2. Klick på "Logga in" anropar login(username, password)
+ * 3. När token sätts i AuthProvider uppdateras context
+ * 4. useEffect reagerar på att token ändras
+ * 5. Användaren omdirigeras automatiskt till /feed via navigate()
  */
 
-const Layout = () => {
-    const {token, logout} = useAuth();
-    const navigate = useNavigate();
 
-    const handleLogout = () => {
-        logout();
-        navigate("/login", {replace: true});
+const LoginForm = () => {
+    const {login, token} = useAuth();
+    //tillägg
+    const navigate = useNavigate();
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    //tillägg
+    useEffect(() => {
+        if (token) {
+            console.log("Token finns: " + token);
+            //navigerar till feed sidan efter inloggning
+            navigate("/feed");
+        }
+    }, [token, navigate]);
+
+    const handleLogin = () => {
+        login(username, password);
     };
 
     return (
-        <>
-            <header className="app-header">
-                <h1>Jensen social app</h1>
+        <div className="login-form">
+            <input
+                type="text"
+                aria-label="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+            />
+            <input
+                type="password"
+                aria-label="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+            />
+            <button onClick={handleLogin}>Logga in</button>
+            {token && <p>Token: {token}</p>}
 
-                {token && (
-                    <button
-                        className="logout-button"
-                        onClick={handleLogout}
-                    >
-                        Logga ut
-                    </button>
-                )}
-            </header>
-
-            <main className="app-main">
-                <Outlet/>
-            </main>
-
-            <footer className="app-footer">
-                <p>© Håkan Gleissman Sprinto 2026</p>
-            </footer>
-        </>
+            <p>
+                Har du inget konto?{" "}
+                <Link to="/register">Registrera dig här</Link>
+            </p>
+        </div>
     );
 };
 
-export default Layout;
+export default LoginForm;
